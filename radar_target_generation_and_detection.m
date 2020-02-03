@@ -10,11 +10,16 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %speed of light = 3e8
+c = 3e8;
+dres = 1;
+Rmax = 200;
+
 %% User Defined Range and Velocity of target
 % *%TODO* :
 % define the target's initial position and velocity. Note : Velocity
 % remains contant
- 
+R = 110;
+v = -20;
 
 
 %% FMCW Waveform Generation
@@ -23,7 +28,9 @@ clc;
 %Design the FMCW waveform by giving the specs of each of its parameters.
 % Calculate the Bandwidth (B), Chirp Time (Tchirp) and Slope (slope) of the FMCW
 % chirp using the requirements above.
-
+B = c / (2 * dres);
+Tchirp = 5.5 * 2 * (Rmax / c);
+slope = B / Tchirp;
 
 %Operating carrier frequency of Radar 
 fc= 77e9;             %carrier freq
@@ -58,19 +65,20 @@ for i=1:length(t)
     
     
     % *%TODO* :
-    %For each time stamp update the Range of the Target for constant velocity. 
+    %For each time stamp update the Range of the Target for constant velocity.
+    R = R + t(i) * v;{i}
     
     % *%TODO* :
     %For each time sample we need update the transmitted and
     %received signal. 
-    Tx(i) = 
-    Rx (i)  =
+    Tx(i) = cos(2 * pi * (fc * t(i) + slope * 0.5 * t(i)^2));
+    Rx(i) = cos(2 * pi * (fc * (t(i) - td(i)) + slope * 0.5 * (t(i) - td(i))^2));
     
     % *%TODO* :
     %Now by mixing the Transmit and Receive generate the beat signal
     %This is done by element wise matrix multiplication of Transmit and
     %Receiver Signal
-    Mix(i) = 
+    Mix(i) = Tx(i) * Rx(i);
     
 end
 
@@ -189,7 +197,7 @@ noise_level = zeros(1,1);
 % *%TODO* :
 %display the CFAR output using the Surf function like we did for Range
 %Doppler Response output.
-figure,surf(doppler_axis,range_axis,'replace this with output');
+%figure,surf(doppler_axis,range_axis,'replace this with output');
 colorbar;
 
 
