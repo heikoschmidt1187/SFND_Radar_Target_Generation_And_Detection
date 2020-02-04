@@ -10,27 +10,27 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %speed of light = 3e8
-c = 3e8;
-dres = 1;
-Rmax = 200;
+c = 3e8;        % speed of light
+dres = 1;       % range resolution
+Rmax = 200;     % maximum range
 
 %% User Defined Range and Velocity of target
 % *%TODO* :
 % define the target's initial position and velocity. Note : Velocity
 % remains contant
-R = 110;
-v = -20;
+R = 150;    % initial range
+v = -20;    % initial velocity
 
 
-%% FMCW Waveform Generation
+%% FMCW Waveform Genera1516 6342333tion
 
 % *%TODO* :
 %Design the FMCW waveform by giving the specs of each of its parameters.
 % Calculate the Bandwidth (B), Chirp Time (Tchirp) and Slope (slope) of the FMCW
 % chirp using the requirements above.
-B = c / (2 * dres);
-Tchirp = 5.5 * 2 * (Rmax / c);
-slope = B / Tchirp;
+B = c / (2 * dres);                 % bandwith Bsweep
+Tchirp = 5.5 * 2 * (Rmax / c);      % chirp time
+slope = B / Tchirp;                 % slope of chirp
 
 %Operating carrier frequency of Radar 
 fc= 77e9;             %carrier freq
@@ -66,19 +66,24 @@ for i=1:length(t)
     
     % *%TODO* :
     %For each time stamp update the Range of the Target for constant velocity.
-    R = R + t(i) * v;{i}
+    r_t(i) = R + v * t(i);      % based on s = v * t, mapped to range
+    td(i) = 2 * r_t(i) / c;     % time delay
     
     % *%TODO* :
     %For each time sample we need update the transmitted and
     %received signal. 
-    Tx(i) = cos(2 * pi * (fc * t(i) + slope * 0.5 * t(i)^2));
-    Rx(i) = cos(2 * pi * (fc * (t(i) - td(i)) + slope * 0.5 * (t(i) - td(i))^2));
+    
+    % update transmit sample
+    Tx(i) = cos(2 * pi * (fc * t(i) + slope * t(i)^2 / 2));                      
+    
+    % update receive sample - shifted by time delay tau
+    Rx(i) = cos(2 * pi * (fc * (t(i) - td(i)) + (slope * (t(i) - td(i))^2) / 2));
     
     % *%TODO* :
     %Now by mixing the Transmit and Receive generate the beat signal
     %This is done by element wise matrix multiplication of Transmit and
     %Receiver Signal
-    Mix(i) = Tx(i) * Rx(i);
+    Mix(i) = Tx(i) * Rx(i);     % mixed signal 
     
 end
 
@@ -88,28 +93,31 @@ end
  % *%TODO* :
 %reshape the vector into Nr*Nd array. Nr and Nd here would also define the size of
 %Range and Doppler FFT respectively.
+signal_fft = reshape(Mix, [Nr, Nd]);    % reshape the linspace to 2D matrix Nr rows, Nd cols
 
  % *%TODO* :
 %run the FFT on the beat signal along the range bins dimension (Nr) and
 %normalize.
+signal_fft = fft(signal_fft, Nr) / Nr;  % 1D FFT in Nr direction (col), normalized
 
  % *%TODO* :
 % Take the absolute value of FFT output
+signal_fft = abs(signal_fft);   % we are interested in the absolute value
 
  % *%TODO* :
 % Output of FFT is double sided signal, but we are interested in only one side of the spectrum.
 % Hence we throw out half of the samples.
-
+signal_fft = signal_fft(1:(Nr / 2));  
 
 %plotting the range
 figure ('Name','Range from First FFT')
-subplot(2,1,1)
+subplot(2, 1, 1)
 
  % *%TODO* :
  % plot FFT output 
-
- 
+plot(signal_fft);
 axis ([0 200 0 1]);
+xlabel('range measured');
 
 
 
@@ -117,7 +125,6 @@ axis ([0 200 0 1]);
 % The 2D FFT implementation is already provided here. This will run a 2DFFT
 % on the mixed signal (beat signal) output and generate a range doppler
 % map.You will implement CFAR on the generated RDM
-
 
 % Range Doppler Map Generation.
 
@@ -143,7 +150,7 @@ range_axis = linspace(-200,200,Nr/2)*((Nr/2)/400);
 figure,surf(doppler_axis,range_axis,RDM);
 
 %% CFAR implementation
-
+%{
 %Slide Window through the complete Range Doppler Map
 
 % *%TODO* :
@@ -156,9 +163,9 @@ figure,surf(doppler_axis,range_axis,RDM);
 % *%TODO* :
 % offset the threshold by SNR value in dB
 
+
 % *%TODO* :
 %Create a vector to store noise_level for each iteration on training cells
-noise_level = zeros(1,1);
 
 
 % *%TODO* :
@@ -188,18 +195,12 @@ noise_level = zeros(1,1);
  
 
 
-
-
-
-
-
-
 % *%TODO* :
 %display the CFAR output using the Surf function like we did for Range
 %Doppler Response output.
-%figure,surf(doppler_axis,range_axis,'replace this with output');
+figure('Name','CA-CFAR Filtered RDM'),surf(doppler_axis, range_axis, sig_CFAR);
 colorbar;
 
-
+%}
  
  
