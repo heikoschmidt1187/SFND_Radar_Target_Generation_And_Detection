@@ -150,22 +150,30 @@ range_axis = linspace(-200,200,Nr/2)*((Nr/2)/400);
 figure,surf(doppler_axis,range_axis,RDM);
 
 %% CFAR implementation
-%{
+
 %Slide Window through the complete Range Doppler Map
 
 % *%TODO* :
 %Select the number of Training Cells in both the dimensions.
+Tr = 10;    % training cells for range
+Td = 4;     % training cells for doppler
 
 % *%TODO* :
 %Select the number of Guard Cells in both dimensions around the Cell under 
 %test (CUT) for accurate estimation
+Gr = 8;     % guard cells for range
+Gd = 4;     % guard cells for doppler
+
+no_of_tcells = (2 * Tr + 2 * Gr + 1) * (2 * Td + 2 * Gd + 1) - ...
+    (2 * Gr + 1) * (2 * Gd + 1);
 
 % *%TODO* :
 % offset the threshold by SNR value in dB
-
+offset = 10;   % threshold offset
 
 % *%TODO* :
 %Create a vector to store noise_level for each iteration on training cells
+noise_level = zeros(1, 1);      % noise level in range and doppler direction
 
 
 % *%TODO* :
@@ -183,8 +191,41 @@ figure,surf(doppler_axis,range_axis,RDM);
    % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
    % CFAR
 
+% slide over range dimension - /2 because only one half of the signal is
+% used, keep spacing at the edges
+sig_CFAR = zeros(size(RDM));
 
-
+for r = (Tr + Gr + 1):(Nr / 2 - (Gr + Tr))
+    
+    % slide over doppler dimension - full signal range is used, keep
+    % spacing at the edges
+    for d = (Td + Gd + 1):(Nd - (Gd + Td))
+        
+        % TODO: sum the signal level within the training cells, convert db2pow
+        
+        % get the patch with all training and guard cell + CUT (converted)
+        train_patch = db2pow(RDM(r - (Tr + Gr) : r + (Tr + Gr), d - (Td + Gd) : d + (Td + Gd)));
+                
+        % zero CUT and guard cells as we are not interested in these now 
+        train_patch(Tr + 1 : end - Tr, Td + 1 : end - Td) = 0;
+        
+        (sum(sum(train_patch)) / no_of_tcells);
+        
+        % average summed values for used training cells and convert back
+        % pow2db
+        noise_level = pow2db(sum(sum(train_patch)) / no_of_tcells);
+        
+        % add the offset to determine the threshold
+        threshold = noise_level + offset;
+        
+        % compare signal under CUT with threshold --> 0 or one
+        if RDM(r, d) < threshold
+            sig_CFAR(r, d) = 0;
+        else
+            sig_CFAR(r, d) = 1;
+        end
+    end
+end
 
 
 % *%TODO* :
@@ -192,7 +233,12 @@ figure,surf(doppler_axis,range_axis,RDM);
 %than the Range Doppler Map as the CUT cannot be located at the edges of
 %matrix. Hence,few cells will not be thresholded. To keep the map size same
 % set those values to 0. 
- 
+
+% the not handled values are a boarder of training + guard cell
+sig_CFAR(1 : Nr / 2, 1 : Td + Gd) = 0;          % front cols
+sig_CFAR(1 : Nr / 2, Nd - (Td + Gd) : Nd) = 0;  % back cols
+sig_CFAR(1 : Tr + Gr, 1 : Nd) = 0;                  % top rows
+sig_CFAR(Nr / 2 - (Tr + Gr) : Nr / 2, 1 : Nd) = 0;  % bottom rows
 
 
 % *%TODO* :
@@ -201,6 +247,5 @@ figure,surf(doppler_axis,range_axis,RDM);
 figure('Name','CA-CFAR Filtered RDM'),surf(doppler_axis, range_axis, sig_CFAR);
 colorbar;
 
-%}
  
  
