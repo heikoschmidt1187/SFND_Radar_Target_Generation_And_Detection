@@ -26,6 +26,10 @@ slope = B / Tchirp;                 % slope of chirp
 display(slope);
 ```
 
+The resulting chirps look in general like the following example:
+
+<img src="imgs/chirp.png" width="700" />
+
 The calculated slope value is:
 
 ```console
