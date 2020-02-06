@@ -18,8 +18,8 @@ Rmax = 200;     % maximum range
 % *%TODO* :
 % define the target's initial position and velocity. Note : Velocity
 % remains contant
-R = 150;    % initial range
-v = -20;    % initial velocity
+R = 100;    % initial range
+v = 60;    % initial velocity
 
 
 %% FMCW Waveform Genera1516 6342333tion
