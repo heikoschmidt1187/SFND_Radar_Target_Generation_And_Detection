@@ -22,7 +22,7 @@ R = 100;    % initial range
 v = 60;    % initial velocity
 
 
-%% FMCW Waveform Genera1516 6342333tion
+%% FMCW Waveform Generation
 
 % *%TODO* :
 %Design the FMCW waveform by giving the specs of each of its parameters.
@@ -31,6 +31,8 @@ v = 60;    % initial velocity
 B = c / (2 * dres);                 % bandwith Bsweep
 Tchirp = 5.5 * 2 * (Rmax / c);      % chirp time
 slope = B / Tchirp;                 % slope of chirp
+
+display(slope);
 
 %Operating carrier frequency of Radar 
 fc= 77e9;             %carrier freq
@@ -208,8 +210,6 @@ for r = (Tr + Gr + 1):(Nr / 2 - (Gr + Tr))
                 
         % zero CUT and guard cells as we are not interested in these now 
         train_patch(Tr + 1 : end - Tr, Td + 1 : end - Td) = 0;
-        
-        (sum(sum(train_patch)) / no_of_tcells);
         
         % average summed values for used training cells and convert back
         % pow2db
